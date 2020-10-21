@@ -5,7 +5,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { Customers } from './Customers';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { Registration } from '../components';
 import { Account } from './Account';
 
 export default class LoggedIn extends Component {
@@ -18,11 +17,13 @@ export default class LoggedIn extends Component {
         const Drawer = createDrawerNavigator();
         return (
             <NavigationContainer >
-                <Drawer.Navigator initialRouteName="Customers">
-                <Stack.Screen name ="Customers" component={Customers} />
-                <Stack.Screen name ="Account" >
-                    {props => <Account deleteJWT={this.props.deleteJWT} user={this.props.user}/>}
-                </Stack.Screen>
+                <Drawer.Navigator initialRouteName="Account">
+                    <Stack.Screen name="Customers">
+                        {props => <Customers user={this.props.user} axios={this.props.axios}/>}
+                    </Stack.Screen>
+                    <Stack.Screen name="Account" >
+                        {props => <Account deleteJWT={this.props.deleteJWT} user={this.props.user} />}
+                    </Stack.Screen>
                 </Drawer.Navigator>
             </NavigationContainer>
 

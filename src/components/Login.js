@@ -42,8 +42,8 @@ class Login extends Component {
           const user = {
             email : response.data.user.email,
             name: response.data.user.name,
-            role: response.data.user.role
-
+            role: response.data.user.role,
+            id_token: response.data.access_token
           }
           this.props.newJWT(response.data.access_token, user);
 
