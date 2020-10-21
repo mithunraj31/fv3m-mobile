@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from 'react';
-import { View, Text, SafeAreaView, FlatList } from 'react-native';
+import { View, Text, SafeAreaView, FlatList, ActivityIndicator } from 'react-native';
 import { Button } from './../components/common'
-import { ListItem, SearchBar } from 'react-native-elements'
+import { ListItem, SearchBar, List } from 'react-native-elements'
 import deviceStorage from '../services/deviceStorage';
 import axios from 'axios';
 import { API_URL } from "./../../env";
@@ -13,9 +13,10 @@ class Customers extends Component {
             loading: false,
             data: [],
             page: 1,
-            seed: 1,
+            noOfPages: 1,
             error: null,
-            refreshing: false
+            refreshing: false,
+            search : ''
         };
     }
 
@@ -29,24 +30,36 @@ class Customers extends Component {
             <Item2 title={item.name} subTitle={item.description} id={item.id.toString()} />
         );
         return (
-            <SafeAreaView style={styles.container}>
-                <FlatList
-                    data={this.state.data}
-                    renderItem={renderItem}
-                    keyExtractor={item => item.id}
-                    onEndReached={this.handleLoadMore}
-                    ItemSeparatorComponent={this.renderSeparator}
-                    ListHeaderComponent={this.renderHeader}
-                    refreshing={this.state.refreshing}
-                    onRefresh={this.handleRefresh}
-                />
-            </SafeAreaView>
+            <View>
+ 
+                    <FlatList
+                        data={this.state.data}
+                        renderItem={renderItem}
+                        keyExtractor={item => item.id}
+                        onEndReached={this.handleLoadMore}
+                        ItemSeparatorComponent={this.renderSeparator}
+                        ListHeaderComponent={this.renderHeader}
+                        refreshing={this.state.refreshing}
+                        onRefresh={this.handleRefresh}
+                        onEndReachedThreshold={0.5}
+                        ListFooterComponent={this.renderFooter}
+                    />
+            </View>
 
         );
     }
 
     handleLoadMore = () => {
-        console.log("bottom reached");
+        if (this.state.page < this.state.noOfPages) {
+            this.setState(
+                {
+                    page: this.state.page + 1
+                },
+                () => {
+                    this.getCustomers();
+                }
+            );
+        }
     }
 
     getCustomers = () => {
@@ -56,11 +69,12 @@ class Customers extends Component {
         instance.defaults.headers.common['Authorization'] = `Bearer ${this.props.user.id_token}`;
         instance.defaults.headers.common['Accept'] = 'application/json';
         instance.defaults.headers.common['Content-Type'] = 'application/json';
-        console.log(this.props);
-        instance.get(`${API_URL}/api/v1/customers`).then(result => {
+        instance.get(`${API_URL}/api/v1/customers?page=${this.state.page}&search=${this.state.search}`).then(result => {
+            console.log(result);
             this.setState({
-                data: result.data.data,
+                data: this.state.page === 1 ? result.data.data : [...this.state.data, ...result.data.data],
                 loading: false,
+                noOfPages: result.data.meta.last_page,
                 refreshing: false
             })
         }).catch(error => {
@@ -74,6 +88,8 @@ class Customers extends Component {
     handleRefresh = () => {
         this.setState(
             {
+                page: 1,
+                noOfPages: 1,
                 refreshing: true
             },
             () => {
@@ -95,7 +111,43 @@ class Customers extends Component {
         );
     };
     renderHeader = () => {
-        return <SearchBar placeholder="Type Here..." lightTheme round />;
+        return <SearchBar 
+        placeholder="Type Here..." 
+        lightTheme round 
+        onChangeText={(text)=>this.updateSearch(text)}
+        onClear= {(text)=>this.updateSearch('')}
+        value={this.state.search}
+        />;
+    };
+
+    updateSearch= (text) => {
+        this.setState(
+            {
+                page: 1,
+                noOfPages: 1,
+                data: [],
+                search:text
+            },
+            () => {
+                this.getCustomers();
+            }
+        );
+    };
+
+    renderFooter = () => {
+        if (!this.state.loading) return null;
+
+        return (
+            <View
+                style={{
+                    paddingVertical: 20,
+                    borderTopWidth: 1,
+                    borderColor: "#CED0CE"
+                }}
+            >
+                <ActivityIndicator animating size="large" />
+            </View>
+        );
     };
 }
 
