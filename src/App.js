@@ -41,7 +41,7 @@ export default class App extends Component {
       );
     } else if (this.state.jwt) {
       return (
-        <LoggedIn deleteJWT={this.deleteJWT} user={this.state.user} axios={this.state.axiosInstance}/>
+        <LoggedIn deleteJWT={this.deleteJWT} user={this.state.user}/>
       );
     }
   }

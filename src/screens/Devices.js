@@ -1,11 +1,11 @@
 import React, { Component, Fragment } from 'react';
-import { View, Text, SafeAreaView, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, SafeAreaView, FlatList, ActivityIndicator,TouchableOpacity} from 'react-native';
 import { Button } from './../components/common'
-import { ListItem, SearchBar, Header } from 'react-native-elements'
+import { ListItem, SearchBar, Header, Avatar } from 'react-native-elements'
 import deviceStorage from '../services/deviceStorage';
 import axios from 'axios';
 import { API_URL } from "./../../env";
-class Customers extends Component {
+class Devices extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -17,20 +17,27 @@ class Customers extends Component {
             error: null,
             refreshing: false,
             search: '',
-            isSearchOn:false
+            isSearchOn: false
         };
     }
 
     componentDidMount() {
-        this.getCustomers();
+        this.getRemoteData();
     }
     render() {
         const { error, loading } = this.state;
         const { container } = styles;
         const renderItem = ({ item }) => (
-            <Item2 title={item.name} subTitle={item.description} id={item.id.toString()} />
+            <TouchableOpacity onPress={()=>this.navigate(item)}>
+            <Item
+                id={item.id.toString()}
+                title={item.name}
+                subTitle={item.serial_number}
+                subTitle2={item.description}
+                image={item.images ? item.images[0].full_url : null}
+            />
+            </TouchableOpacity>
         );
-        console.log(this.props);
         return (
             <View>
 
@@ -45,6 +52,7 @@ class Customers extends Component {
                     onRefresh={this.handleRefresh}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={this.renderFooter}
+
                 />
             </View>
 
@@ -58,21 +66,20 @@ class Customers extends Component {
                     page: this.state.page + 1
                 },
                 () => {
-                    this.getCustomers();
+                    this.getRemoteData();
                 }
             );
         }
     }
 
-    getCustomers = () => {
+    getRemoteData = () => {
         const instance = axios.create({
             baseURL: `${API_URL}`
         });
         instance.defaults.headers.common['Authorization'] = `Bearer ${this.props.user.id_token}`;
         instance.defaults.headers.common['Accept'] = 'application/json';
         instance.defaults.headers.common['Content-Type'] = 'application/json';
-        instance.get(`${API_URL}/api/v1/customers?page=${this.state.page}&search=${this.state.search}`).then(result => {
-            console.log(result);
+        instance.get(`${API_URL}/api/v1/devices?page=${this.state.page}&search=${this.state.search}`).then(result => {
             this.setState({
                 data: this.state.page === 1 ? result.data.data : [...this.state.data, ...result.data.data],
                 loading: false,
@@ -95,7 +102,7 @@ class Customers extends Component {
                 refreshing: true
             },
             () => {
-                this.getCustomers();
+                this.getRemoteData();
             }
         );
     };
@@ -115,9 +122,9 @@ class Customers extends Component {
     renderHeader = () => {
         return <View>
             <Header
-                leftComponent={{ icon: 'menu', color: '#fff' , onPress:()=>this.props.navigation.toggleDrawer()}}
-                centerComponent={{ text: 'Customers', style: { color: '#fff' } }}
-                rightComponent={{ icon: 'search', color: '#fff' ,onPress:()=>this.toggleSearch()}}
+                leftComponent={{ icon: 'menu', color: '#fff', onPress: () => this.props.navigation.toggleDrawer() }}
+                centerComponent={{ text: 'Devices', style: { color: '#fff' } }}
+                rightComponent={{ icon: 'search', color: '#fff', onPress: () => this.toggleSearch() }}
             />{
                 this.state.isSearchOn ?
                     <SearchBar
@@ -132,9 +139,9 @@ class Customers extends Component {
 
         </View>;
     };
-    toggleSearch(){
+    toggleSearch() {
         this.setState({
-            isSearchOn:!this.state.isSearchOn
+            isSearchOn: !this.state.isSearchOn
         });
     }
 
@@ -147,7 +154,7 @@ class Customers extends Component {
                 search: text
             },
             () => {
-                this.getCustomers();
+                this.getRemoteData();
             }
         );
     };
@@ -167,6 +174,11 @@ class Customers extends Component {
             </View>
         );
     };
+
+    navigate=({id})=>{
+        console.log(this.props.navigation.navigate);
+        this.props.navigation.navigate('Device');
+    };
 }
 
 const styles = {
@@ -177,14 +189,19 @@ const styles = {
 };
 
 
-const Item2 = ({ title, subTitle, id }) => (
-    <ListItem key={id} bottomDivider>
+const Item = ({ title, subTitle, subTitle2, id, image, onPress }) => (
+    <View>
+    <ListItem key={id} bottomDivider button
+    >
+        <Avatar title={title} source={image && { uri: image }} />
         <ListItem.Content>
             <ListItem.Title>{title}</ListItem.Title>
             <ListItem.Subtitle>{subTitle}</ListItem.Subtitle>
+            <ListItem.Subtitle>{subTitle2}</ListItem.Subtitle>
         </ListItem.Content>
         <ListItem.Chevron />
     </ListItem>
+    </View>
 );
 
-export { Customers };
+export { Devices };

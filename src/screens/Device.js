@@ -1,11 +1,11 @@
 import React, { Component, Fragment } from 'react';
 import { View, Text, SafeAreaView, FlatList, ActivityIndicator } from 'react-native';
 import { Button } from './../components/common'
-import { ListItem, SearchBar, Header } from 'react-native-elements'
+import { ListItem, SearchBar, Header,Avatar } from 'react-native-elements'
 import deviceStorage from '../services/deviceStorage';
 import axios from 'axios';
 import { API_URL } from "./../../env";
-class Customers extends Component {
+class Device extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -17,24 +17,31 @@ class Customers extends Component {
             error: null,
             refreshing: false,
             search: '',
-            isSearchOn:false
+            isSearchOn:false,
+            title: 'Device'
         };
     }
 
     componentDidMount() {
-        this.getCustomers();
+        this.getRemoteData();
     }
     render() {
         const { error, loading } = this.state;
         const { container } = styles;
         const renderItem = ({ item }) => (
-            <Item2 title={item.name} subTitle={item.description} id={item.id.toString()} />
+            <Item 
+            id={item.id.toString()} 
+            title={item.name}
+            subTitle={item.serial_number} 
+            subTitle2={item.description}
+            image= {item.images?item.images[0].full_url:null}
+            />
         );
         console.log(this.props);
         return (
             <View>
-
-                <FlatList
+                <Text>Device id :</Text>
+                {/* <FlatList
                     data={this.state.data}
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
@@ -45,7 +52,7 @@ class Customers extends Component {
                     onRefresh={this.handleRefresh}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={this.renderFooter}
-                />
+                /> */}
             </View>
 
         );
@@ -58,20 +65,20 @@ class Customers extends Component {
                     page: this.state.page + 1
                 },
                 () => {
-                    this.getCustomers();
+                    this.getRemoteData();
                 }
             );
         }
     }
 
-    getCustomers = () => {
+    getRemoteData = () => {
         const instance = axios.create({
             baseURL: `${API_URL}`
         });
         instance.defaults.headers.common['Authorization'] = `Bearer ${this.props.user.id_token}`;
         instance.defaults.headers.common['Accept'] = 'application/json';
         instance.defaults.headers.common['Content-Type'] = 'application/json';
-        instance.get(`${API_URL}/api/v1/customers?page=${this.state.page}&search=${this.state.search}`).then(result => {
+        instance.get(`${API_URL}/api/v1/devices?page=${this.state.page}&search=${this.state.search}`).then(result => {
             console.log(result);
             this.setState({
                 data: this.state.page === 1 ? result.data.data : [...this.state.data, ...result.data.data],
@@ -95,7 +102,7 @@ class Customers extends Component {
                 refreshing: true
             },
             () => {
-                this.getCustomers();
+                this.getRemoteData();
             }
         );
     };
@@ -116,7 +123,7 @@ class Customers extends Component {
         return <View>
             <Header
                 leftComponent={{ icon: 'menu', color: '#fff' , onPress:()=>this.props.navigation.toggleDrawer()}}
-                centerComponent={{ text: 'Customers', style: { color: '#fff' } }}
+                centerComponent={{ text: this.state.title, style: { color: '#fff' } }}
                 rightComponent={{ icon: 'search', color: '#fff' ,onPress:()=>this.toggleSearch()}}
             />{
                 this.state.isSearchOn ?
@@ -147,7 +154,7 @@ class Customers extends Component {
                 search: text
             },
             () => {
-                this.getCustomers();
+                this.getRemoteData();
             }
         );
     };
@@ -177,14 +184,16 @@ const styles = {
 };
 
 
-const Item2 = ({ title, subTitle, id }) => (
+const Item = ({ title, subTitle,subTitle2, id,image }) => (
     <ListItem key={id} bottomDivider>
+        <Avatar title={title} source={image && { uri: image }}/>
         <ListItem.Content>
             <ListItem.Title>{title}</ListItem.Title>
             <ListItem.Subtitle>{subTitle}</ListItem.Subtitle>
+            <ListItem.Subtitle>{subTitle2}</ListItem.Subtitle>
         </ListItem.Content>
         <ListItem.Chevron />
     </ListItem>
 );
 
-export { Customers };
+export { Device };
