@@ -44,6 +44,11 @@ export default class App extends Component {
         <LoggedIn deleteJWT={this.deleteJWT} user={this.state.user}/>
       );
     }
+
+    //testing
+      //     return (
+      //   <LoggedIn deleteJWT={this.deleteJWT} user={this.state.user}/>
+      // );
   }
 
   

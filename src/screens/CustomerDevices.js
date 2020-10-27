@@ -1,11 +1,11 @@
 import React, { Component, Fragment } from 'react';
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { Button, ErrorAlert } from './../components/common'
-import { ListItem, SearchBar, Header, } from 'react-native-elements'
+import { View, Text, SafeAreaView, FlatList, ActivityIndicator,TouchableOpacity} from 'react-native';
+import { ErrorAlert } from '../components/common'
+import { ListItem, SearchBar, Header, Avatar } from 'react-native-elements'
 import deviceStorage from '../services/deviceStorage';
 import axios from 'axios';
-import { API_URL } from "./../../env";
-class Customers extends Component {
+import { API_URL } from "../../env";
+class CustomerDevices extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -20,16 +20,20 @@ class Customers extends Component {
             isSearchOn: false
         };
     }
-
+    
     componentDidMount() {
-        this.getCustomers();
+        this.getRemoteData();
     }
     render() {
-        const { error, loading } = this.state;
-        const { container } = styles;
         const renderItem = ({ item }) => (
             <TouchableOpacity onPress={()=>this.navigate(item)}>
-            <Item2 title={item.name} subTitle={item.description} id={item.id.toString()} />
+            <Item
+                id={item.id.toString()}
+                title={item.name}
+                subTitle={item.serial_number}
+                subTitle2={item.description}
+                image={item.images&&item.images.length>0 ? item.images[0]['full_url'] : null}
+            />
             </TouchableOpacity>
         );
         return (
@@ -46,14 +50,13 @@ class Customers extends Component {
                     onRefresh={this.handleRefresh}
                     onEndReachedThreshold={0.5}
                     ListFooterComponent={this.renderFooter}
+
                 />
             </View>
 
         );
     }
-    navigate(item){
-        this.props.navigation.navigate('CustomerDevices',{item});
-    };
+
     handleLoadMore = () => {
         if (this.state.page < this.state.noOfPages) {
             this.setState(
@@ -61,20 +64,22 @@ class Customers extends Component {
                     page: this.state.page + 1
                 },
                 () => {
-                    this.getCustomers();
+                    this.getRemoteData();
                 }
             );
         }
     }
 
-    getCustomers = () => {
+    getRemoteData = () => {
         const instance = axios.create({
             baseURL: `${API_URL}`
         });
         instance.defaults.headers.common['Authorization'] = `Bearer ${this.props.user.id_token}`;
         instance.defaults.headers.common['Accept'] = 'application/json';
         instance.defaults.headers.common['Content-Type'] = 'application/json';
-        instance.get(`${API_URL}/api/v1/customers?page=${this.state.page}&search=${this.state.search}`).then(result => {
+        let url = `${API_URL}/api/v1/customers/${this.props.route.params.item.id}/devices?page=${this.state.page}`;
+        instance.get(url).then(result => {
+            console.log(result.data.data);
             this.setState({
                 data: this.state.page === 1 ? result.data.data : [...this.state.data, ...result.data.data],
                 loading: false,
@@ -82,12 +87,12 @@ class Customers extends Component {
                 refreshing: false
             })
         }).catch(error => {
-            if (error.response && error.response.status == 401) {
-                ErrorAlert({ message: "Token Expired Please Login agian" });
+            if(error.response && error.response.status == 401){
+                ErrorAlert({message:"Token Expired Please Login agian"});
                 this.props.deleteJWT();
             } else {
 
-                ErrorAlert({ message: error.message });
+                ErrorAlert({message:error.message});
             }
             this.setState({
                 loading: false,
@@ -100,10 +105,11 @@ class Customers extends Component {
             {
                 page: 1,
                 noOfPages: 1,
-                refreshing: true
+                refreshing: true,
+                data: []
             },
             () => {
-                this.getCustomers();
+                this.getRemoteData();
             }
         );
     };
@@ -121,11 +127,15 @@ class Customers extends Component {
         );
     };
     renderHeader = () => {
+        var headerText = 'Devices';
+        if(this.props.route.params && this.props.route.params.item){
+            headerText = 'Devices > '+this.props.route.params.item.name;
+        }
         return <View>
             <Header
-                leftComponent={{ icon: 'menu', color: '#fff', onPress: () => this.props.navigation.toggleDrawer() }}
-                centerComponent={{ text: 'Customers', style: { color: '#fff' } }}
-                rightComponent={{ icon: 'search', color: '#fff', onPress: () => this.toggleSearch() }}
+                leftComponent={{ icon: 'arrow-back', color: '#fff', onPress: () => this.props.navigation.goBack() }}
+                centerComponent={{ text: headerText, style: { color: '#fff' } }}
+                // rightComponent={{ icon: 'search', color: '#fff', onPress: () => this.toggleSearch() }}
             />{
                 this.state.isSearchOn ?
                     <SearchBar
@@ -155,7 +165,7 @@ class Customers extends Component {
                 search: text
             },
             () => {
-                this.getCustomers();
+                this.getRemoteData();
             }
         );
     };
@@ -176,8 +186,10 @@ class Customers extends Component {
         );
     };
 
+    navigate(item){
+        this.props.navigation.navigate('Device',{item});
+    };
 }
-
 
 const styles = {
     container: {
@@ -187,16 +199,19 @@ const styles = {
 };
 
 
-const Item2 = ({ title, subTitle, id }) => (
+const Item = ({ title, subTitle, subTitle2, id, image, onPress }) => (
     <View>
-        <ListItem key={id} bottomDivider>
-            <ListItem.Content>
-                <ListItem.Title>{title}</ListItem.Title>
-                <ListItem.Subtitle>{subTitle}</ListItem.Subtitle>
-            </ListItem.Content>
-            <ListItem.Chevron />
-        </ListItem>
+    <ListItem key={id} bottomDivider button
+    >
+        <Avatar title={title} source={image && { uri: image }} />
+        <ListItem.Content>
+            <ListItem.Title>{title}</ListItem.Title>
+            <ListItem.Subtitle>{subTitle}</ListItem.Subtitle>
+            <ListItem.Subtitle>{subTitle2}</ListItem.Subtitle>
+        </ListItem.Content>
+        <ListItem.Chevron />
+    </ListItem>
     </View>
 );
 
-export { Customers };
+export { CustomerDevices };

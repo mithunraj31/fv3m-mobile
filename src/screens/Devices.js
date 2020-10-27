@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import { View, Text, SafeAreaView, FlatList, ActivityIndicator,TouchableOpacity} from 'react-native';
-import { Button } from './../components/common'
+import { ErrorAlert } from './../components/common'
 import { ListItem, SearchBar, Header, Avatar } from 'react-native-elements'
 import deviceStorage from '../services/deviceStorage';
 import axios from 'axios';
@@ -20,13 +20,11 @@ class Devices extends Component {
             isSearchOn: false
         };
     }
-
+    
     componentDidMount() {
         this.getRemoteData();
     }
     render() {
-        const { error, loading } = this.state;
-        const { container } = styles;
         const renderItem = ({ item }) => (
             <TouchableOpacity onPress={()=>this.navigate(item)}>
             <Item
@@ -34,7 +32,7 @@ class Devices extends Component {
                 title={item.name}
                 subTitle={item.serial_number}
                 subTitle2={item.description}
-                image={item.images ? item.images[0].full_url : null}
+                image={item.images&&item.images.length>0 ? item.images[0]['full_url'] : null}
             />
             </TouchableOpacity>
         );
@@ -44,7 +42,7 @@ class Devices extends Component {
                 <FlatList
                     data={this.state.data}
                     renderItem={renderItem}
-                    keyExtractor={item => item.id}
+                    keyExtractor={item => item.id.toString()}
                     onEndReached={this.handleLoadMore}
                     ItemSeparatorComponent={this.renderSeparator}
                     ListHeaderComponent={this.renderHeader}
@@ -79,7 +77,12 @@ class Devices extends Component {
         instance.defaults.headers.common['Authorization'] = `Bearer ${this.props.user.id_token}`;
         instance.defaults.headers.common['Accept'] = 'application/json';
         instance.defaults.headers.common['Content-Type'] = 'application/json';
-        instance.get(`${API_URL}/api/v1/devices?page=${this.state.page}&search=${this.state.search}`).then(result => {
+        let url = `${API_URL}/api/v1/devices?page=${this.state.page}&search=${this.state.search}`;
+        // if (this.props.route.params&&this.props.route.params.item){
+        //     url = `${API_URL}/api/v1/customers/${this.props.route.params.item.id}/devices?page=${this.state.page}`;
+        // }
+        instance.get(url).then(result => {
+            console.log(result.data.data);
             this.setState({
                 data: this.state.page === 1 ? result.data.data : [...this.state.data, ...result.data.data],
                 loading: false,
@@ -87,7 +90,13 @@ class Devices extends Component {
                 refreshing: false
             })
         }).catch(error => {
-            console.log(error.response);
+            if(error.response && error.response.status == 401){
+                ErrorAlert({message:"Token Expired Please Login agian"});
+                this.props.deleteJWT();
+            } else {
+
+                ErrorAlert({message:error.message});
+            }
             this.setState({
                 loading: false,
                 refreshing: false
@@ -99,7 +108,8 @@ class Devices extends Component {
             {
                 page: 1,
                 noOfPages: 1,
-                refreshing: true
+                refreshing: true,
+                data: []
             },
             () => {
                 this.getRemoteData();
@@ -120,10 +130,14 @@ class Devices extends Component {
         );
     };
     renderHeader = () => {
+        var headerText = 'Devices';
+        if(this.props.route.params && this.props.route.params.item){
+            headerText = 'Devices > '+this.props.route.params.item.name;
+        }
         return <View>
             <Header
                 leftComponent={{ icon: 'menu', color: '#fff', onPress: () => this.props.navigation.toggleDrawer() }}
-                centerComponent={{ text: 'Devices', style: { color: '#fff' } }}
+                centerComponent={{ text: headerText, style: { color: '#fff' } }}
                 rightComponent={{ icon: 'search', color: '#fff', onPress: () => this.toggleSearch() }}
             />{
                 this.state.isSearchOn ?
@@ -175,9 +189,8 @@ class Devices extends Component {
         );
     };
 
-    navigate=({id})=>{
-        console.log(this.props.navigation.navigate);
-        this.props.navigation.navigate('Device');
+    navigate(item){
+        this.props.navigation.navigate('Device',{item});
     };
 }
 

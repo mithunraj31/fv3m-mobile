@@ -28,6 +28,7 @@ class Login extends Component {
     instance.defaults.headers.common['Accept'] = 'application/json';
     instance.defaults.headers.common['Content-Type'] = 'application/json';
     // NOTE Post to HTTPS only in production
+    console.log(`${API_URL}/api/v1/login`);
     instance.post(`${API_URL}/api/v1/login`, {
       email: email,
       password: password
