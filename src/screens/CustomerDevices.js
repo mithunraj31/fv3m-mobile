@@ -79,7 +79,6 @@ class CustomerDevices extends Component {
         instance.defaults.headers.common['Content-Type'] = 'application/json';
         let url = `${API_URL}/api/v1/customers/${this.props.route.params.item.id}/devices?page=${this.state.page}`;
         instance.get(url).then(result => {
-            console.log(result.data.data);
             this.setState({
                 data: this.state.page === 1 ? result.data.data : [...this.state.data, ...result.data.data],
                 loading: false,
@@ -88,7 +87,7 @@ class CustomerDevices extends Component {
             })
         }).catch(error => {
             if(error.response && error.response.status == 401){
-                ErrorAlert({message:"Token Expired Please Login agian"});
+                ErrorAlert({message:"Token Expired Please Login again!"});
                 this.props.deleteJWT();
             } else {
 

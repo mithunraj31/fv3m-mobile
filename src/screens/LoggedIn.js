@@ -9,6 +9,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Account } from './Account';
 import { CustomerDevices } from './CustomerDevices';
+import { Maintenance } from './Maintenance';
 navigator.geolocation = require('@react-native-community/geolocation');
 export default class LoggedIn extends Component {
     constructor(props) {
@@ -49,6 +50,9 @@ export default class LoggedIn extends Component {
                     </Stack.Screen>
                     <Stack.Screen name="CustomerDevices" >
                         {props => <CustomerDevices {...props} user={this.props.user} deleteJWT={this.props.deleteJWT} />}
+                    </Stack.Screen>
+                    <Stack.Screen name="Maintenance" >
+                        {props => <Maintenance {...props} user={this.props.user} deleteJWT={this.props.deleteJWT} />}
                     </Stack.Screen>
                 </Stack.Navigator>
             </NavigationContainer>

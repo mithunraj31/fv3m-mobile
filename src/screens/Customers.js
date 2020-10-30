@@ -83,7 +83,7 @@ class Customers extends Component {
             })
         }).catch(error => {
             if (error.response && error.response.status == 401) {
-                ErrorAlert({ message: "Token Expired Please Login agian" });
+                ErrorAlert({ message: "Token Expired Please Login again!" });
                 this.props.deleteJWT();
             } else {
 

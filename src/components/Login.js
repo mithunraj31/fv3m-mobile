@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react';
 import { Text, View } from 'react-native';
-import { Input, TextLink, Loading, Button } from './common';
+import { Input, ErrorAlert, Loading, Button } from './common';
 import axios from 'axios';
 import deviceStorage from '../services/deviceStorage';
 import {API_URL} from "./../../env";
@@ -19,7 +19,6 @@ class Login extends Component {
   }
   loginUser() {
     const { email, password, password_confirmation } = this.state;
-    console.log(email, password);
     this.setState({ error: '', loading: true });
 
     const instance = axios.create({
@@ -28,13 +27,11 @@ class Login extends Component {
     instance.defaults.headers.common['Accept'] = 'application/json';
     instance.defaults.headers.common['Content-Type'] = 'application/json';
     // NOTE Post to HTTPS only in production
-    console.log(`${API_URL}/api/v1/login`);
     instance.post(`${API_URL}/api/v1/login`, {
       email: email,
       password: password
     })
       .then((response) => {
-        console.log(response.data.access_token);
         if (response.data.access_token) {
           deviceStorage.saveItem("id_token", response.data.access_token);
           deviceStorage.saveItem("name", response.data.user.name);
@@ -49,11 +46,11 @@ class Login extends Component {
           this.props.newJWT(response.data.access_token, user);
 
         }else {
+          ErrorAlert({ message: error.message });
           this.onLoginFail();
         }
       })
       .catch((error) => {
-        console.log(error);
         this.onLoginFail();
       });
   }

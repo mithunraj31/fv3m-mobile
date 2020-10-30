@@ -1,17 +1,15 @@
-import React, { Component, Fragment } from 'react';
-import { View, Text, Modal, FlatList, ActivityIndicator, ScrollView} from 'react-native';
-import { ErrorAlert, convertImagesToStringArray, convertImagesToUriArray, Loading } from './../components/common/'
+import React, { Component } from 'react';
+import { View, Text, Modal, FlatList, ActivityIndicator, TouchableOpacity,} from 'react-native';
+import { ErrorAlert, convertImagesToStringArray, convertImagesToUriArray, Loading } from '../components/common'
 import { Icon, Input, Card, Header } from 'react-native-elements'
 import axios from 'axios';
-import { API_URL } from "./../../env";
-import { FbGrid } from './../components/common/FBGrid'
+import { API_URL } from "../../env";
+import { FbGrid } from '../components/common/FBGrid'
 var ImagePicker = require('react-native-image-picker');
-const FormData = require('form-data')
 
 import ImageViewer from 'react-native-image-zoom-viewer';
-import { color } from 'react-native-reanimated';
-import { TouchableOpacity } from 'react-native-gesture-handler';
-class Device extends Component {
+import { ScrollView } from 'react-native-gesture-handler';
+class Maintenance extends Component {
     _isMounted = false;
     _uri = [];
     constructor(props) {
@@ -19,24 +17,24 @@ class Device extends Component {
         this.state = {
             error: '',
             loading: false,
-            deviceData: {},
-            maintenanceData: [],
+            maintenanceData: {},
+            memoData: [],
             page: 1,
             noOfPages: 1,
             error: null,
             refreshing: false,
-            addMaintananceVisible: false,
-            title: 'Device',
+            addMemoVisible: false,
+            title: 'Maintenance',
             imageSlider: false,
             imageSliderData: [],
-            newMaintenance: { name: null, nameError: '', description: null, images: { uri: [], data: [] } },
+            newMemo: { name: null, descError: '', description: null, images: { uri: [], data: [] } },
             test: '',
             lat: '',
             lng: '',
             editImageView: false,
             editModalVisible: false,
-            editMaintenance: null,
-            editImageData: [],
+            editMemo: null,
+            editImageData: []
         };
 
         this.addImagesToState = this.addImagesToState.bind(this);
@@ -47,7 +45,7 @@ class Device extends Component {
         this.getLocation();
         this._isMounted = true;
         this.getRemoteData();
-        this.getMaintenanceData();
+        this.getMemeoData();
 
     }
     componentWillUnmount() {
@@ -57,19 +55,15 @@ class Device extends Component {
         const { error, loading } = this.state;
         const { container } = styles;
         const renderItem = ({ item }) => (
-            <TouchableOpacity
-            onPress={() => { this.navigateToMaintenace(item)}}
-            onLongPress={() => { this.openEditModal(item) }}
-            ><View>
-                    <Item
-                        id={item.id}
-                        title={item.name}
-                        date={item.created_at}
-                        subTitle={item.description}
-                        images={convertImagesToStringArray(item.images) || []}
-                        onPress={() => this.openImageView(convertImagesToStringArray(item.images)|| [])}
-                    />
-                </View>
+            <TouchableOpacity onLongPress={() => this.openEditModal(item)}>
+                <Item
+                    id={item.id}
+                    title={item.description}
+                    date={item.created_at}
+                    user={item.user?item.user.name:''}
+                    images={convertImagesToStringArray(item.images) || []}
+                    onPress={() => this.openImageView(convertImagesToStringArray(item.images))}
+                />
             </TouchableOpacity>
         );
 
@@ -77,12 +71,12 @@ class Device extends Component {
         return (
             <View>
                 <FlatList
-                    data={this.state.maintenanceData}
+                    data={this.state.memoData}
                     renderItem={renderItem}
                     keyExtractor={item => item.id.toString()}
                     // onEndReached={this.handleLoadMore}
                     // ItemSeparatorComponent={this.renderSeparator}
-                    ListHeaderComponent={this.renderHeader(this.state.deviceData)}
+                    ListHeaderComponent={this.renderHeader(this.state.maintenanceData)}
                     refreshing={this.state.refreshing}
                     onRefresh={this.handleRefresh}
                     // onEndReachedThreshold={0.5}
@@ -95,9 +89,7 @@ class Device extends Component {
 
         );
     }
-    navigateToMaintenace = (item) => {
-        this.props.navigation.navigate('Maintenance', { item });
-    }
+
     handleLoadMore = () => {
         if (this.state.page < this.state.noOfPages) {
             this.setState(
@@ -111,7 +103,7 @@ class Device extends Component {
         }
     }
     openEditModal = (item) => {
-        this.setState({ editMaintenance: item });
+        this.setState({ editMemo: item });
         this.setState({ editModalVisible: true });
     }
     getRemoteData = () => {
@@ -126,15 +118,16 @@ class Device extends Component {
             loading: true,
             refreshing: true
         })
-        instance.get(`${API_URL}/api/v1/devices/${this.props.route.params.item.id}`).then(result => {
+        instance.get(`${API_URL}/api/v1/maintenances/${this.props.route.params.item.id}`).then(result => {
+            console.log(result.data)
             this.setState({
-                deviceData: result.data.data,
+                maintenanceData: result.data.data,
                 loading: false,
                 refreshing: false
             })
         }).catch(error => {
             if (error.response && error.response.status == 401) {
-                ErrorAlert({ message: "Token Expired Please Login agian" });
+                ErrorAlert({ message: "Token Expired Please Login again!" });
                 this.props.deleteJWT();
             } else {
 
@@ -146,7 +139,7 @@ class Device extends Component {
             })
         });
     }
-    getMaintenanceData = () => {
+    getMemeoData = () => {
         const instance = axios.create({
             baseURL: `${API_URL}`
         });
@@ -158,17 +151,17 @@ class Device extends Component {
             loading: true,
             refreshing: true
         })
-        instance.get(`${API_URL}/api/v1/devices/${this.props.route.params.item.id}/maintenances`).then(result => {
+        instance.get(`${API_URL}/api/v1/maintenances/${this.props.route.params.item.id}/memos`).then(result => {
             console.log(result);
             this.setState({
-                maintenanceData: this.state.page === 1 ? result.data.data : [...this.state.maintenanceData, ...result.data.data],
+                memoData: this.state.page === 1 ? result.data.data : [...this.state.memoData, ...result.data.data],
                 noOfPages: result.data.meta.last_page,
                 loading: false,
                 refreshing: false
             })
         }).catch(error => {
             if (error.response && error.response.status == 401) {
-                ErrorAlert({ message: "Token Expired Please Login agian" });
+                ErrorAlert({ message: "Token Expired Please Login again!" });
                 this.props.deleteJWT();
             } else {
 
@@ -189,7 +182,7 @@ class Device extends Component {
             },
             () => {
                 this.getRemoteData();
-                this.getMaintenanceData();
+                this.getMemeoData();
             }
         );
     };
@@ -200,17 +193,17 @@ class Device extends Component {
                 reverse
                 name='delete'
                 color='#f50'
-                onPress={() => { this.removeImageFromMaintenance(currentIndex) }} />
+                onPress={() => { this.removeImageFromMemo(currentIndex) }} />
         </View>
     }
-    renderHeader = (device) => {
+    renderHeader = (maintenance) => {
         const EditModal = this.editModal;
         return <View>
             <View>
                 <Header
                     leftComponent={{ icon: 'arrow-back', color: '#fff', onPress: () => this.props.navigation.goBack() }}
-                    centerComponent={{ text: this.props.route.params.item.name, style: { color: '#fff' } }}
-                    rightComponent={{ icon: 'add', color: '#fff', onPress: () => this.toggleAddMaintenance() }}
+                    centerComponent={{ text: 'Maintenance', style: { color: '#fff' } }}
+                    rightComponent={{ icon: 'add', color: '#fff', onPress: () => this.toggleAddMemo() }}
                 />
 
 
@@ -225,48 +218,38 @@ class Device extends Component {
                 />
             </Modal>
             <Card>
-                <Card.Title>{device.name}</Card.Title>
-                <Text>Serial No :{device.serial_number}</Text>
+                <Card.Title>{maintenance.name}</Card.Title>
+                <Text>{maintenance.description}</Text>
                 <Card.Divider />
-
-                <Text>{device.description}</Text>
+                <Text>User: {maintenance.user?maintenance.user.name:''}</Text>
                 <Card.Divider />
-                <Text>Company : {device.customer ? device.customer.name : ''}</Text>
+                <Text>Device : {maintenance.device?maintenance.device.name:''}</Text>
                 <Card.Divider />
+                <Text>Created at : {maintenance.created_at}</Text>
                 <FbGrid
                     style={{ height: 200 }}
-                    images={convertImagesToStringArray(this.state.deviceData.images)}
-                    onPress={() => { this.openImageView(convertImagesToStringArray(this.state.deviceData.images)) }}
+                    images={convertImagesToStringArray(this.state.maintenanceData.images)}
+                    onPress={() => { this.openImageView(convertImagesToStringArray(this.state.maintenanceData.images)) }}
                 />
             </Card>
-            {this.state.addMaintananceVisible &&
+            {this.state.addMemoVisible &&
 
                 <Card>
                     <Input
-                        placeholder='New Maintenance Name..'
-                        errorStyle={{ color: 'red' }}
-                        errorMessage={this.state.newMaintenance.nameError}
-                        ref={this.state.newMaintenance.name}
-                        onChangeText={value => this.setState((prv) => {
-                            let newMaintenance = Object.assign({}, prv.newMaintenance);
-                            newMaintenance.name = value;
-                            return { newMaintenance };
-                        })}
-                    />
-                    <Input
                         placeholder='Description'
                         errorStyle={{ color: 'red' }}
-                        errorMessage=''
-                        ref={this.state.newMaintenance.description}
+                        errorMessage={this.state.newMemo.descError}
+                        ref={this.state.newMemo.description}
+                        multiline={true}
                         onChangeText={value => this.setState((prv) => {
-                            let newMaintenance = Object.assign({}, prv.newMaintenance);
-                            newMaintenance.description = value;
-                            return { newMaintenance };
+                            let newMemo = Object.assign({}, prv.newMemo);
+                            newMemo.description = value;
+                            return { newMemo };
                         })}
                     />
                     <Text>lat: {this.state.lat}</Text>
                     <Text>lng: {this.state.lng}</Text>
-                    <FbGrid style={{ height: 200 }} images={this.state.newMaintenance.images.uri} onPress={() => { this.openImageView(this.state.newMaintenance.images.uri, true) }} />
+                    <FbGrid style={{ height: 200 }} images={this.state.newMemo.images.uri} onPress={() => { this.openImageView(this.state.newMemo.images.uri, true) }} />
                     {!this.state.loading ?
                         <View style={{ flexDirection: 'row-reverse' }}>
 
@@ -275,7 +258,7 @@ class Device extends Component {
                                 reverse
                                 name='input'
                                 color='#1565c0'
-                                onPress={this.addMaintenace} />
+                                onPress={this.addMemo} />
                             <Icon
                                 raised
                                 name='camera'
@@ -294,17 +277,17 @@ class Device extends Component {
 
         </View>;
     };
-    toggleAddMaintenance() {
+    toggleAddMemo() {
         this.setState({
-            addMaintananceVisible: !this.state.addMaintananceVisible
+            addMemoVisible: !this.state.addMemoVisible
         });
     }
-    removeImageFromMaintenance = (index) => {
+    removeImageFromMemo = (index) => {
         if(this.state.editModalVisible){
-            this.state.editMaintenance.images.splice(index, 1);
+            this.state.editMemo.images.splice(index, 1);
         }else{
-            this.state.newMaintenance.images.data.splice(index, 1);
-            this.state.newMaintenance.images.uri.splice(index, 1);
+            this.state.newMemo.images.data.splice(index, 1);
+            this.state.newMemo.images.uri.splice(index, 1);
         }
             
         this.setState({ imageSlider: false });
@@ -346,21 +329,21 @@ class Device extends Component {
 
 
     addImagesToState = (response) => {
-        const uri = [...this.state.newMaintenance.images.uri, response.uri];
-        const data = [...this.state.newMaintenance.images.data, `data:image/jpeg;base64,${response.data}`];
+        const uri = [...this.state.newMemo.images.uri, response.uri];
+        const data = [...this.state.newMemo.images.data, `data:image/jpeg;base64,${response.data}`];
         this.setState((prv) => {
-            let newMaintenance = Object.assign({}, prv.newMaintenance);
-            newMaintenance.images.uri = uri;
-            newMaintenance.images.data = data;
-            return { newMaintenance };
+            let newMemo = Object.assign({}, prv.newMemo);
+            newMemo.images.uri = uri;
+            newMemo.images.data = data;
+            return { newMemo };
         })
     }
     addImagesToEditState = async (response) => {
-        const uri = [...this.state.editMaintenance.images, {full_url: response.uri, data:`data:image/jpeg;base64,${response.data}`}];
+        const uri = [...this.state.editMemo.images, {full_url: response.uri, data:`data:image/jpeg;base64,${response.data}`}];
         this.setState((prv) => {
-            let editMaintenance = Object.assign({}, prv.editMaintenance);
-            editMaintenance.images= uri;
-            return { editMaintenance };
+            let editMemo = Object.assign({}, prv.editMemo);
+            editMemo.images= uri;
+            return { editMemo };
         })
     }
     openImagePicker = (onSuccess) => {
@@ -389,9 +372,9 @@ class Device extends Component {
         }, 100);
 
     }
-    clearNewMaintenance = () => {
+    clearnewMemo = () => {
         this.setState({
-            newMaintenance: {
+            newMemo: {
                 name: null,
                 description: null,
                 images: {
@@ -403,45 +386,43 @@ class Device extends Component {
     }
     getLocation = () => {
         navigator.geolocation.getCurrentPosition((success) => {
-            console.log(success);
             this.setState({
                 lat: success.coords.latitude,
                 lng: success.coords.longitude
             })
         });
     }
-    addMaintenace = async () => {
+    addMemo = async () => {
         this.setState((prv) => {
             let loading = true;
             let refreshing = true;
-            let newMaintenance = Object.assign({}, prv.newMaintenance);
-            newMaintenance.nameError = '';
-            return { loading, refreshing, newMaintenance };
+            let newMemo = Object.assign({}, prv.newMemo);
+            newMemo.descError = '';
+            return { loading, refreshing, newMemo };
         });
         //Validating
-        if (this.state.newMaintenance.name == '') {
+        if (this.state.newMemo.name == '') {
             return this.setState((prv) => {
                 let loading = false;
                 let refreshing = false;
-                let newMaintenance = Object.assign({}, prv.newMaintenance);
-                newMaintenance.nameError = 'Name cannot be empty';
-                return { loading, refreshing, newMaintenance };
+                let newMemo = Object.assign({}, prv.newMemo);
+                newMemo.descError = 'Description cannot be empty';
+                return { loading, refreshing, newMemo };
             });
         }
         let imageUrls = [];
-        if (this.state.newMaintenance.images.uri.length > 0) {
+        if (this.state.newMemo.images.uri.length > 0) {
             imageUrls = await this.uploadImages();
         }
         const data = {
-            name: this.state.newMaintenance.name,
-            description: this.state.newMaintenance.description,
+            name: this.state.newMemo.name,
+            description: this.state.newMemo.description,
             lat: this.state.lat,
             lng: this.state.lng,
-            device_id: this.props.route.params.item.id,
+            maintenance_id: this.props.route.params.item.id,
             imageUrls: imageUrls
 
         }
-        console.log(data);
         const instance = axios.create({
             baseURL: `${API_URL}`
         });
@@ -449,18 +430,18 @@ class Device extends Component {
         instance.defaults.headers.common['Accept'] = 'application/json';
         instance.defaults.headers.common['Content-Type'] = 'application/json';
 
-        instance.post(`${API_URL}/api/v1/maintenances`, data).then(result => {
+        instance.post(`${API_URL}/api/v1/memos`, data).then(result => {
             this.setState({
                 loading: false,
                 refreshing: false,
-                addMaintananceVisible: false
+                addMemoVisible: false
             });
-            this.clearNewMaintenance();
+            this.clearnewMemo();
             this.handleRefresh();
         }).catch(error => {
             console.log(error.response);
             if (error.response && error.response.status == 401) {
-                ErrorAlert({ message: "Token Expired Please Login agian" });
+                ErrorAlert({ message: "Token Expired Please Login again!" });
                 this.props.deleteJWT();
             } else {
 
@@ -483,7 +464,7 @@ class Device extends Component {
             instance.defaults.headers.common['Content-Type'] = 'application/json';
 
             const promiseArray = [];
-            let imageData = data?data:this.state.newMaintenance.images.data;
+            let imageData = data?data:this.state.newMemo.images.data;
             if (imageData.length > 0) {
                 imageData.forEach(imageData => {
                     const promise = new Promise((resolve, reject) => {
@@ -502,7 +483,6 @@ class Device extends Component {
                     resolve(values);
 
                 }).catch((error) => {
-                    console.log(error);
                     ErrorAlert({ message: error.message });
                     reject(error);
                 })
@@ -511,7 +491,7 @@ class Device extends Component {
 
 
     }
-    editMaintenance = async (data) =>{
+    editMemo = async (data) =>{
         this.setState((prv) => {
             let loading = true;
             let refreshing = true;
@@ -521,7 +501,7 @@ class Device extends Component {
         // process images
         const newImageData = [];
         const oldImageUrls = [];
-        this.state.editMaintenance.images.forEach(imgObj=>{
+        this.state.editMemo.images.forEach(imgObj=>{
             if(imgObj.data){
                 newImageData.push(imgObj.data)
             }else {
@@ -532,6 +512,7 @@ class Device extends Component {
         const allImageUrls = oldImageUrls.concat(newImageUrls);
         let newdata= data;
         newdata.imageUrls =allImageUrls;
+        console.log(newdata);
         //end of image process
         // Update maintenance
         const instance = axios.create({
@@ -541,18 +522,17 @@ class Device extends Component {
         instance.defaults.headers.common['Accept'] = 'application/json';
         instance.defaults.headers.common['Content-Type'] = 'application/json';
 
-        instance.put(`${API_URL}/api/v1/maintenances/${data.id}`, newdata).then(result => {
+        instance.put(`${API_URL}/api/v1/memos/${data.id}`, newdata).then(result => {
             this.setState({
                 loading: false,
                 refreshing: false,
                 editModalVisible: false
             });
-            this.clearNewMaintenance();
+            this.clearnewMemo();
             this.handleRefresh();
         }).catch(error => {
-            console.log(error.response);
             if (error.response && error.response.status == 401) {
-                ErrorAlert({ message: "Token Expired Please Login agian" });
+                ErrorAlert({ message: "Token Expired Please Login again!" });
                 this.props.deleteJWT();
             } else {
 
@@ -567,20 +547,20 @@ class Device extends Component {
 
     }
     editModal = () => {
-        const item = this.state.editMaintenance;
+        const item = this.state.editMemo;
         let data;
-        let nameError = '';
+        let descError = '';
         const validate = () =>{
             if(data.name==''){
-                nameError ='Name cannot be empty'
+                descError ='Decription cannot be empty'
             }else {
-                nameError =''
-                this.editMaintenance(data);
+                descError =''
+                this.editMemo(data);
             }
 
         }
         if (item) {
-            nameError = '';
+            descError = '';
             data = {
                 id: item.id,
                 name: item.name,
@@ -589,7 +569,6 @@ class Device extends Component {
                 lat: item.lat,
                 lng: item.lng
             }
-            // console.log(item);
             return <Modal
                 animationType="slide"
                 visible={this.state.editModalVisible}
@@ -597,26 +576,18 @@ class Device extends Component {
                 presentationStyle='overFullScreen'
 
             ><Header
-                    centerComponent={{ text: 'Edit Maintenance', style: { color: '#fff' } }}
+                    centerComponent={{ text: 'Edit Memo', style: { color: '#fff' } }}
                     rightComponent={{ icon: 'close', color: '#fff', onPress: () => this.setState({ editModalVisible: false }) }}
                 />
                 <ScrollView>
                 <View >
                     <Card >
                         <Input
-                            placeholder='New Maintenance Name..'
-                            errorStyle={{ color: 'red' }}
-                            errorMessage={nameError}
-                            defaultValue={item.name}
-                            onChangeText={value => {
-                                data.name = value;
-                            }}
-                        />
-                        <Input
                             placeholder='Description'
                             errorStyle={{ color: 'red' }}
-                            errorMessage=''
+                            errorMessage={descError}
                             defaultValue={item.description}
+                            multiline={true}
                             onChangeText={value => {
                                 data.description = value;
                             }}
@@ -625,8 +596,8 @@ class Device extends Component {
                         <Text>lng: {data.lng}</Text>
                         <FbGrid 
                         style={{ height: 200 }} 
-                        images={convertImagesToStringArray(this.state.editMaintenance.images || [])} 
-                        onPress={() => { this.openImageView(convertImagesToStringArray(this.state.editMaintenance.images || []), true) }} />
+                        images={convertImagesToStringArray(this.state.editMemo.images)} 
+                        onPress={() => { this.openImageView(convertImagesToStringArray(this.state.editMemo.images), true) }} />
                         {!this.state.loading ?
                             <View style={{ flexDirection: 'row-reverse' }}>
 
@@ -667,16 +638,16 @@ const styles = {
 };
 
 
-const Item = ({ title, subTitle, date, id, images, onPress }) => (
+const Item = ({ title, user, date, id, images, onPress }) => (
     <Card>
         <Card.Title style={{ textAlign: "left" }}>{title}</Card.Title>
-        <Text>{date}</Text>
+        <Text>User : {user}</Text>
         <Card.Divider />
-        <Text>{subTitle}</Text>
+        <Text>Created at : {date}</Text>
         <FbGrid style={{ height: 100 }} images={images} onPress={onPress} />
     </Card>
 );
 
 
 
-export { Device };
+export { Maintenance };

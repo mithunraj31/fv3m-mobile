@@ -14,7 +14,6 @@ class Account extends Component {
     render() {
         const { error, loading } = this.state;
         const { container} = styles;
-        console.log(this.props);
         return (
             <View style={container}>
                 <Button onPress={this.props.deleteJWT}>
