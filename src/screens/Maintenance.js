@@ -235,6 +235,7 @@ class Maintenance extends Component {
             {this.state.addMemoVisible &&
 
                 <Card>
+                    <Card.Title>Add Memo</Card.Title>
                     <Input
                         placeholder='Description'
                         errorStyle={{ color: 'red' }}
@@ -350,6 +351,7 @@ class Maintenance extends Component {
         // More info on all the options is below in the API Reference... just some common use cases shown here
         const options = {
             title: 'Select Images',
+            quality: 0.8,
             storageOptions: {
                 skipBackup: true,
                 path: 'images',

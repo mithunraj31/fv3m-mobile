@@ -336,6 +336,7 @@ class Devices extends Component {
         // More info on all the options is below in the API Reference... just some common use cases shown here
         const options = {
             title: 'Select Images',
+            quality: 0.8,
             storageOptions: {
                 skipBackup: true,
                 path: 'images',

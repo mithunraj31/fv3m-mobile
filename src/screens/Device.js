@@ -242,11 +242,12 @@ class Device extends Component {
             {this.state.addMaintananceVisible &&
 
                 <Card>
+                    <Card.Title>Add Maintenance</Card.Title>
                     <Input
                         placeholder='New Maintenance Name..'
                         errorStyle={{ color: 'red' }}
                         errorMessage={this.state.newMaintenance.nameError}
-                        ref={this.state.newMaintenance.name}
+                        multiline={true}
                         onChangeText={value => this.setState((prv) => {
                             let newMaintenance = Object.assign({}, prv.newMaintenance);
                             newMaintenance.name = value;
@@ -257,7 +258,7 @@ class Device extends Component {
                         placeholder='Description'
                         errorStyle={{ color: 'red' }}
                         errorMessage=''
-                        ref={this.state.newMaintenance.description}
+                        multiline={true}
                         onChangeText={value => this.setState((prv) => {
                             let newMaintenance = Object.assign({}, prv.newMaintenance);
                             newMaintenance.description = value;
@@ -367,6 +368,7 @@ class Device extends Component {
         // More info on all the options is below in the API Reference... just some common use cases shown here
         const options = {
             title: 'Select Images',
+            quality: 0.8,
             storageOptions: {
                 skipBackup: true,
                 path: 'images',
@@ -603,6 +605,7 @@ class Device extends Component {
                 <ScrollView>
                 <View >
                     <Card >
+                        
                         <Input
                             placeholder='New Maintenance Name..'
                             errorStyle={{ color: 'red' }}
