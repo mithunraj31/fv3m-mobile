@@ -7,7 +7,7 @@ import { API_URL } from "./../../env";
 import { FbGrid } from './../components/common/FBGrid'
 var ImagePicker = require('react-native-image-picker');
 const FormData = require('form-data')
-
+import Moment from 'moment';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import { color } from 'react-native-reanimated';
 import { TouchableOpacity } from 'react-native-gesture-handler';
@@ -64,7 +64,7 @@ class Device extends Component {
                     <Item
                         id={item.id}
                         title={item.name}
-                        date={item.created_at}
+                        date={Moment(item.updated_at).format("dd, MM Do YYYY, H:mm:ss")}
                         subTitle={item.description}
                         images={convertImagesToStringArray(item.images) || []}
                         onPress={() => this.openImageView(convertImagesToStringArray(item.images)|| [])}
@@ -233,6 +233,7 @@ class Device extends Component {
                 <Card.Divider />
                 <Text>Company : {device.customer ? device.customer.name : ''}</Text>
                 <Card.Divider />
+                <Text>Updated at : {Moment(device.updated_at).format("dd, MM Do YYYY, H:mm:ss")}</Text>
                 <FbGrid
                     style={{ height: 200 }}
                     images={convertImagesToStringArray(this.state.deviceData.images)}
@@ -421,7 +422,7 @@ class Device extends Component {
             return { loading, refreshing, newMaintenance };
         });
         //Validating
-        if (this.state.newMaintenance.name == '') {
+        if (this.state.newMaintenance.name == ''||this.state.newMaintenance.name == null) {
             return this.setState((prv) => {
                 let loading = false;
                 let refreshing = false;
@@ -673,7 +674,7 @@ const styles = {
 const Item = ({ title, subTitle, date, id, images, onPress }) => (
     <Card>
         <Card.Title style={{ textAlign: "left" }}>{title}</Card.Title>
-        <Text>{date}</Text>
+        <Text>Updated at: {date}</Text>
         <Card.Divider />
         <Text>{subTitle}</Text>
         <FbGrid style={{ height: 100 }} images={images} onPress={onPress} />

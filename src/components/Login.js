@@ -46,11 +46,11 @@ class Login extends Component {
           this.props.newJWT(response.data.access_token, user);
 
         }else {
-          ErrorAlert({ message: error.message });
           this.onLoginFail();
         }
       })
       .catch((error) => {
+        ErrorAlert({ message: error.message });
         this.onLoginFail();
       });
   }

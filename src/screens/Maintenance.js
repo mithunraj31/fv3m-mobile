@@ -4,7 +4,8 @@ import { ErrorAlert, convertImagesToStringArray, convertImagesToUriArray, Loadin
 import { Icon, Input, Card, Header } from 'react-native-elements'
 import axios from 'axios';
 import { API_URL } from "../../env";
-import { FbGrid } from '../components/common/FBGrid'
+import { FbGrid } from '../components/common/FBGrid';
+import Moment from 'moment';
 var ImagePicker = require('react-native-image-picker');
 
 import ImageViewer from 'react-native-image-zoom-viewer';
@@ -59,7 +60,7 @@ class Maintenance extends Component {
                 <Item
                     id={item.id}
                     title={item.description}
-                    date={item.created_at}
+                    date={Moment(item.updated_at).format("dd, MM Do YYYY, H:mm:ss")}
                     user={item.user?item.user.name:''}
                     images={convertImagesToStringArray(item.images) || []}
                     onPress={() => this.openImageView(convertImagesToStringArray(item.images))}
@@ -225,7 +226,7 @@ class Maintenance extends Component {
                 <Card.Divider />
                 <Text>Device : {maintenance.device?maintenance.device.name:''}</Text>
                 <Card.Divider />
-                <Text>Created at : {maintenance.created_at}</Text>
+                <Text>Updated at : {Moment(maintenance.updated_at).format("dd, MM Do YYYY, H:mm:ss")}</Text>
                 <FbGrid
                     style={{ height: 200 }}
                     images={convertImagesToStringArray(this.state.maintenanceData.images)}
@@ -403,7 +404,7 @@ class Maintenance extends Component {
             return { loading, refreshing, newMemo };
         });
         //Validating
-        if (this.state.newMemo.name == '') {
+        if (this.state.newMemo.description == ''||this.state.newMemo.description==null) {
             return this.setState((prv) => {
                 let loading = false;
                 let refreshing = false;
@@ -500,6 +501,8 @@ class Maintenance extends Component {
             return { loading, refreshing };
         });
 
+
+
         // process images
         const newImageData = [];
         const oldImageUrls = [];
@@ -551,9 +554,10 @@ class Maintenance extends Component {
     editModal = () => {
         const item = this.state.editMemo;
         let data;
-        let descError = '';
+        let descError = 'thr';
         const validate = () =>{
-            if(data.name==''){
+            console.log(data);
+            if(data.description=='' || data.description==null){
                 descError ='Decription cannot be empty'
             }else {
                 descError =''
@@ -645,7 +649,7 @@ const Item = ({ title, user, date, id, images, onPress }) => (
         <Card.Title style={{ textAlign: "left" }}>{title}</Card.Title>
         <Text>User : {user}</Text>
         <Card.Divider />
-        <Text>Created at : {date}</Text>
+        <Text>Updated at : {date}</Text>
         <FbGrid style={{ height: 100 }} images={images} onPress={onPress} />
     </Card>
 );
